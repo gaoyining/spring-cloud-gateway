@@ -258,6 +258,8 @@ public class GatewayFilterSpec extends UriSpec {
 
 	/**
 	 * A filter that can be used to add a prefix to the path of a request before it is routed by the Gateway.
+	 *
+	 * 一种过滤器，可用于在请求路由被网关路由之前为其添加前缀。
 	 * @param prefix the prefix to add to the path
 	 * @return a {@link GatewayFilterSpec} that can be used to apply additional filters
 	 */

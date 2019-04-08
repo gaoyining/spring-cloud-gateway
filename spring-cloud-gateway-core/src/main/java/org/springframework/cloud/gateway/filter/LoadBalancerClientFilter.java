@@ -66,9 +66,11 @@ public class LoadBalancerClientFilter implements GlobalFilter, Ordered {
 		URI url = exchange.getAttribute(GATEWAY_REQUEST_URL_ATTR);
 		String schemePrefix = exchange.getAttribute(GATEWAY_SCHEME_PREFIX_ATTR);
 		if (url == null || (!"lb".equals(url.getScheme()) && !"lb".equals(schemePrefix))) {
+			// lb开头的
 			return chain.filter(exchange);
 		}
 		//preserve the original url
+		//保留原始网址
 		addOriginalRequestUrl(exchange, url);
 
 		log.trace("LoadBalancerClientFilter url before: " + url);

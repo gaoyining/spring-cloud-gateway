@@ -32,6 +32,9 @@ import reactor.core.publisher.Mono;
 
 /**
  * Sample throttling filter.
+ *
+ * 样品节流过滤器。
+ *
  * See https://github.com/bbeck/token-bucket
  */
 public class ThrottleGatewayFilter implements GatewayFilter {

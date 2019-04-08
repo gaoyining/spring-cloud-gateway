@@ -37,6 +37,7 @@ class RouteDslTests {
 	@Autowired
 	lateinit var builder: RouteLocatorBuilder
 
+
 	@Test
 	fun sampleRouteDsl() {
 		val routeLocator = builder.routes {
