@@ -17,6 +17,7 @@
 package org.springframework.cloud.gateway.filter.factory;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,6 +29,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
+import reactor.retry.Backoff;
 import reactor.retry.Repeat;
 import reactor.retry.RepeatContext;
 import reactor.retry.Retry;
@@ -35,6 +37,7 @@ import reactor.retry.RetryContext;
 
 import org.springframework.cloud.gateway.event.EnableBodyCachingEvent;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.support.HasRouteId;
 import org.springframework.cloud.gateway.support.TimeoutException;
 import org.springframework.http.HttpMethod;
@@ -43,6 +46,7 @@ import org.springframework.http.HttpStatus.Series;
 import org.springframework.util.Assert;
 import org.springframework.web.server.ServerWebExchange;
 
+import static org.springframework.cloud.gateway.support.GatewayToStringStyler.filterToStringCreator;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.CLIENT_RESPONSE_HEADER_NAMES;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ALREADY_ROUTED_ATTR;
 
@@ -103,6 +107,11 @@ public class RetryGatewayFilterFactory
 
 			statusCodeRepeat = Repeat.onlyIf(repeatPredicate)
 					.doOnRepeat(context -> reset(context.applicationContext()));
+
+			BackoffConfig backoff = retryConfig.getBackoff();
+			if (backoff != null) {
+				statusCodeRepeat = statusCodeRepeat.backoff(getBackoff(backoff));
+			}
 		}
 
 		// TODO: support timeout, backoff, jitter, etc... in Builder
@@ -130,9 +139,36 @@ public class RetryGatewayFilterFactory
 			exceptionRetry = Retry.onlyIf(retryContextPredicate)
 					.doOnRetry(context -> reset(context.applicationContext()))
 					.retryMax(retryConfig.getRetries());
+			BackoffConfig backoff = retryConfig.getBackoff();
+			if (backoff != null) {
+				exceptionRetry = exceptionRetry.backoff(getBackoff(backoff));
+			}
 		}
 
-		return apply(retryConfig.getRouteId(), statusCodeRepeat, exceptionRetry);
+		GatewayFilter gatewayFilter = apply(retryConfig.getRouteId(), statusCodeRepeat,
+				exceptionRetry);
+		return new GatewayFilter() {
+			@Override
+			public Mono<Void> filter(ServerWebExchange exchange,
+					GatewayFilterChain chain) {
+				return gatewayFilter.filter(exchange, chain);
+			}
+
+			@Override
+			public String toString() {
+				return filterToStringCreator(RetryGatewayFilterFactory.this)
+						.append("retries", retryConfig.getRetries())
+						.append("series", retryConfig.getSeries())
+						.append("statuses", retryConfig.getStatuses())
+						.append("methods", retryConfig.getMethods())
+						.append("exceptions", retryConfig.getExceptions()).toString();
+			}
+		};
+	}
+
+	private Backoff getBackoff(BackoffConfig backoff) {
+		return Backoff.exponential(backoff.firstBackoff, backoff.maxBackoff,
+				backoff.factor, backoff.basedOnPreviousValue);
 	}
 
 	public boolean exceedsMaxIterations(ServerWebExchange exchange,
@@ -220,6 +256,8 @@ public class RetryGatewayFilterFactory
 		private List<Class<? extends Throwable>> exceptions = toList(IOException.class,
 				TimeoutException.class);
 
+		private BackoffConfig backoff;
+
 		public RetryConfig allMethods() {
 			return setMethods(HttpMethod.values());
 		}
@@ -231,6 +269,25 @@ public class RetryGatewayFilterFactory
 							|| !this.exceptions.isEmpty(),
 					"series, status and exceptions may not all be empty");
 			Assert.notEmpty(this.methods, "methods may not be empty");
+			if (this.backoff != null) {
+				this.backoff.validate();
+			}
+		}
+
+		public BackoffConfig getBackoff() {
+			return backoff;
+		}
+
+		public RetryConfig setBackoff(BackoffConfig backoff) {
+			this.backoff = backoff;
+			return this;
+		}
+
+		public RetryConfig setBackoff(Duration firstBackoff, Duration maxBackoff,
+				int factor, boolean basedOnPreviousValue) {
+			this.backoff = new BackoffConfig(firstBackoff, maxBackoff, factor,
+					basedOnPreviousValue);
+			return this;
 		}
 
 		@Override
@@ -286,6 +343,65 @@ public class RetryGatewayFilterFactory
 		public RetryConfig setExceptions(Class<? extends Throwable>... exceptions) {
 			this.exceptions = Arrays.asList(exceptions);
 			return this;
+		}
+
+	}
+
+	public static class BackoffConfig {
+
+		private Duration firstBackoff = Duration.ofMillis(5);
+
+		private Duration maxBackoff;
+
+		private int factor = 2;
+
+		private boolean basedOnPreviousValue = true;
+
+		public BackoffConfig() {
+		}
+
+		public BackoffConfig(Duration firstBackoff, Duration maxBackoff, int factor,
+				boolean basedOnPreviousValue) {
+			this.firstBackoff = firstBackoff;
+			this.maxBackoff = maxBackoff;
+			this.factor = factor;
+			this.basedOnPreviousValue = basedOnPreviousValue;
+		}
+
+		public void validate() {
+			Assert.notNull(this.firstBackoff, "firstBackoff must be present");
+		}
+
+		public Duration getFirstBackoff() {
+			return firstBackoff;
+		}
+
+		public void setFirstBackoff(Duration firstBackoff) {
+			this.firstBackoff = firstBackoff;
+		}
+
+		public Duration getMaxBackoff() {
+			return maxBackoff;
+		}
+
+		public void setMaxBackoff(Duration maxBackoff) {
+			this.maxBackoff = maxBackoff;
+		}
+
+		public int getFactor() {
+			return factor;
+		}
+
+		public void setFactor(int factor) {
+			this.factor = factor;
+		}
+
+		public boolean isBasedOnPreviousValue() {
+			return basedOnPreviousValue;
+		}
+
+		public void setBasedOnPreviousValue(boolean basedOnPreviousValue) {
+			this.basedOnPreviousValue = basedOnPreviousValue;
 		}
 
 	}
