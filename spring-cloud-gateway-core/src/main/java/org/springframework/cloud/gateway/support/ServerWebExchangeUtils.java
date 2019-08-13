@@ -249,7 +249,20 @@ public final class ServerWebExchangeUtils {
 	public static AsyncPredicate<ServerWebExchange> toAsyncPredicate(
 			Predicate<? super ServerWebExchange> predicate) {
 		Assert.notNull(predicate, "predicate must not be null");
-		return t -> Mono.just(predicate.test(t));
+		return AsyncPredicate.from(predicate);
+	}
+
+	public static String expand(ServerWebExchange exchange, String template) {
+		Assert.notNull(exchange, "exchange may not be null");
+		Assert.notNull(template, "template may not be null");
+
+		if (template.indexOf('{') == -1) { // short circuit
+			return template;
+		}
+
+		Map<String, String> variables = getUriTemplateVariables(exchange);
+		return UriComponentsBuilder.fromPath(template).build().expand(variables)
+				.getPath();
 	}
 
 	@SuppressWarnings("unchecked")

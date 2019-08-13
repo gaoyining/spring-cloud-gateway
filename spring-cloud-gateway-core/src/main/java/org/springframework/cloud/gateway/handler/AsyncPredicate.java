@@ -17,12 +17,15 @@
 package org.springframework.cloud.gateway.handler;
 
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import org.springframework.cloud.gateway.handler.predicate.GatewayPredicate;
 import org.springframework.util.Assert;
+import org.springframework.web.server.ServerWebExchange;
 
 /**
  * @author Ben Hale
@@ -31,23 +34,117 @@ public interface AsyncPredicate<T> extends Function<T, Publisher<Boolean>> {
 
 	// 与操作，即两个 Predicate 组成一个，需要同时满足。
 	default AsyncPredicate<T> and(AsyncPredicate<? super T> other) {
-		Assert.notNull(other, "other must not be null");
-
-		return t -> Flux.zip(apply(t), other.apply(t))
-				.map(tuple -> tuple.getT1() && tuple.getT2());
+		return new AndAsyncPredicate<>(this, other);
 	}
 
 	// 取反操作，即对 Predicate 匹配结果取反。
 	default AsyncPredicate<T> negate() {
-		return t -> Mono.from(apply(t)).map(b -> !b);
+		return new NegateAsyncPredicate<>(this);
 	}
 
 	// 或操作，即两个 Predicate 组成一个，只需满足其一。
 	default AsyncPredicate<T> or(AsyncPredicate<? super T> other) {
-		Assert.notNull(other, "other must not be null");
+		return new OrAsyncPredicate<>(this, other);
+	}
 
-		return t -> Flux.zip(apply(t), other.apply(t))
-				.map(tuple -> tuple.getT1() || tuple.getT2());
+	static AsyncPredicate<ServerWebExchange> from(
+			Predicate<? super ServerWebExchange> predicate) {
+		return new DefaultAsyncPredicate<>(GatewayPredicate.wrapIfNeeded(predicate));
+	}
+
+	class DefaultAsyncPredicate<T> implements AsyncPredicate<T> {
+
+		private final Predicate<T> delegate;
+
+		public DefaultAsyncPredicate(Predicate<T> delegate) {
+			this.delegate = delegate;
+		}
+
+		@Override
+		public Publisher<Boolean> apply(T t) {
+			return Mono.just(delegate.test(t));
+		}
+
+		@Override
+		public String toString() {
+			return this.delegate.toString();
+		}
+
+	}
+
+	class NegateAsyncPredicate<T> implements AsyncPredicate<T> {
+
+		private final AsyncPredicate<? super T> predicate;
+
+		public NegateAsyncPredicate(AsyncPredicate<? super T> predicate) {
+			Assert.notNull(predicate, "predicate AsyncPredicate must not be null");
+			this.predicate = predicate;
+		}
+
+		@Override
+		public Publisher<Boolean> apply(T t) {
+			return Mono.from(predicate.apply(t)).map(b -> !b);
+		}
+
+		@Override
+		public String toString() {
+			return String.format("!%s", this.predicate);
+		}
+
+	}
+
+	class AndAsyncPredicate<T> implements AsyncPredicate<T> {
+
+		private final AsyncPredicate<? super T> left;
+
+		private final AsyncPredicate<? super T> right;
+
+		public AndAsyncPredicate(AsyncPredicate<? super T> left,
+				AsyncPredicate<? super T> right) {
+			Assert.notNull(left, "Left AsyncPredicate must not be null");
+			Assert.notNull(right, "Right AsyncPredicate must not be null");
+			this.left = left;
+			this.right = right;
+		}
+
+		@Override
+		public Publisher<Boolean> apply(T t) {
+			return Flux.zip(left.apply(t), right.apply(t))
+					.map(tuple -> tuple.getT1() && tuple.getT2());
+		}
+
+		@Override
+		public String toString() {
+			return String.format("(%s && %s)", this.left, this.right);
+		}
+
+	}
+
+	class OrAsyncPredicate<T> implements AsyncPredicate<T> {
+
+		private final AsyncPredicate<? super T> left;
+
+		private final AsyncPredicate<? super T> right;
+
+		public OrAsyncPredicate(AsyncPredicate<? super T> left,
+				AsyncPredicate<? super T> right) {
+			Assert.notNull(left, "Left AsyncPredicate must not be null");
+			Assert.notNull(right, "Right AsyncPredicate must not be null");
+			this.left = left;
+			this.right = right;
+		}
+
+		@Override
+		public Publisher<Boolean> apply(T t) {
+			return Flux.zip(left.apply(t), right.apply(t))
+					.map(tuple -> tuple.getT1() || tuple.getT2());
+		}
+
+		@Override
+		public String toString() {
+			return String.format("(%s || %s)", this.left, this.right);
+		}
+
 	}
 
 }

@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.gateway.filter.factory;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,6 +26,7 @@ import com.netflix.loadbalancer.Server;
 import com.netflix.loadbalancer.ServerList;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -33,6 +35,8 @@ import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.cloud.gateway.filter.GatewayFilter;
+import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory.RetryConfig;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.cloud.gateway.test.BaseWebClientTests;
@@ -76,6 +80,18 @@ public class RetryGatewayFilterFactoryIntegrationTests extends BaseWebClientTest
 	}
 
 	@Test
+	public void retryWithBackoff() {
+		// @formatter:off
+		testClient.get()
+				.uri("/retry?key=retry-with-backoff&count=3")
+				.header(HttpHeaders.HOST, "www.retrywithbackoff.org")
+				.exchange()
+				.expectStatus().isOk()
+				.expectHeader().value("X-Retry-Count", CoreMatchers.equalTo("3"));
+		// @formatter:on
+	}
+
+	@Test
 	public void retryFilterGetJavaDsl() {
 		testClient.get().uri("/retry?key=getjava&count=2")
 				.header(HttpHeaders.HOST, "www.retryjava.org").exchange().expectStatus()
@@ -109,6 +125,18 @@ public class RetryGatewayFilterFactoryIntegrationTests extends BaseWebClientTest
 							.get("headers");
 					assertThat(headers).containsEntry("X-Forwarded-Host", host);
 				});
+	}
+
+	@Test
+	public void toStringFormat() {
+		RetryConfig config = new RetryConfig();
+		config.setRetries(4);
+		config.setMethods(HttpMethod.GET);
+		config.setSeries(HttpStatus.Series.SERVER_ERROR);
+		config.setExceptions(IOException.class);
+		GatewayFilter filter = new RetryGatewayFilterFactory().apply(config);
+		assertThat(filter.toString()).contains("4").contains("[GET]")
+				.contains("[SERVER_ERROR]").contains("[IOException]");
 	}
 
 	@RestController
@@ -178,6 +206,13 @@ public class RetryGatewayFilterFactoryIntegrationTests extends BaseWebClientTest
 									.retry(config -> config.setRetries(2)
 											.setMethods(HttpMethod.POST, HttpMethod.GET)))
 							.uri(uri))
+
+					.route("retry_with_backoff", r -> r.host("**.retrywithbackoff.org")
+							.filters(f -> f.prefixPath("/httpbin").retry(config -> {
+								config.setRetries(2).setBackoff(Duration.ofMillis(100),
+										null, 2, true);
+							})).uri(uri))
+
 					.route("retry_with_loadbalancer",
 							r -> r.host("**.retrywithloadbalancer.org")
 									.filters(f -> f.prefixPath("/httpbin")

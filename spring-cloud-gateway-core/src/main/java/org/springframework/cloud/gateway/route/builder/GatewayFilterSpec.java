@@ -43,16 +43,21 @@ import org.springframework.cloud.gateway.filter.factory.DedupeResponseHeaderGate
 import org.springframework.cloud.gateway.filter.factory.DedupeResponseHeaderGatewayFilterFactory.Strategy;
 import org.springframework.cloud.gateway.filter.factory.FallbackHeadersGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.HystrixGatewayFilterFactory;
+import org.springframework.cloud.gateway.filter.factory.MapRequestHeaderGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.PrefixPathGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.PreserveHostHeaderGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.RedirectToGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.RemoveRequestHeaderGatewayFilterFactory;
+import org.springframework.cloud.gateway.filter.factory.RemoveRequestParameterGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.RemoveResponseHeaderGatewayFilterFactory;
+import org.springframework.cloud.gateway.filter.factory.RequestHeaderSizeGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.RequestHeaderToRequestUriGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.RequestRateLimiterGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.RequestSizeGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.RewritePathGatewayFilterFactory;
+import org.springframework.cloud.gateway.filter.factory.RewriteLocationResponseHeaderGatewayFilterFactory;
+import org.springframework.cloud.gateway.filter.factory.RewriteLocationResponseHeaderGatewayFilterFactory.StripVersion;
 import org.springframework.cloud.gateway.filter.factory.RewriteResponseHeaderGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.SaveSessionGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.SecureHeadersGatewayFilterFactory;
@@ -68,6 +73,7 @@ import org.springframework.cloud.gateway.filter.ratelimit.RateLimiter;
 import org.springframework.cloud.gateway.route.Route;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpStatus;
+import org.springframework.util.unit.DataSize;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
@@ -212,6 +218,17 @@ public class GatewayFilterSpec extends UriSpec {
 					"This is probably because Hystrix is missing from the classpath, which can be resolved by adding dependency on 'org.springframework.cloud:spring-cloud-starter-netflix-hystrix'");
 		}
 		return filter(factory.apply(this.routeBuilder.getId(), configConsumer));
+	}
+
+	/**
+	 * Maps headers from one name to another.
+	 * @param fromHeader the header name of the original header.
+	 * @param toHeader the header name of the new header.
+	 * @return a {@link GatewayFilterSpec} that can be used to apply additional filters
+	 */
+	public GatewayFilterSpec mapRequestHeader(String fromHeader, String toHeader) {
+		return filter(getBean(MapRequestHeaderGatewayFilterFactory.class)
+				.apply(c -> c.setFromHeader(fromHeader).setToHeader(toHeader)));
 	}
 
 	/**
@@ -430,6 +447,17 @@ public class GatewayFilterSpec extends UriSpec {
 	}
 
 	/**
+	 * A filter that will remove a request param before the request is routed by the
+	 * Gateway.
+	 * @param paramName the name of the header to remove
+	 * @return a {@link GatewayFilterSpec} that can be used to apply additional filters
+	 */
+	public GatewayFilterSpec removeRequestParameter(String paramName) {
+		return filter(getBean(RemoveRequestParameterGatewayFilterFactory.class)
+				.apply(c -> c.setName(paramName)));
+	}
+
+	/**
 	 * A filter that will remove a response header before the Gateway returns the response
 	 * to the client.
 	 * @param headerName the name of the header to remove
@@ -571,6 +599,24 @@ public class GatewayFilterSpec extends UriSpec {
 	}
 
 	/**
+	 * A filter that rewrites the value of Location response header, ridding it of backend
+	 * specific details.
+	 * @param stripVersionMode NEVER_STRIP, AS_IN_REQUEST, or ALWAYS_STRIP
+	 * @param locationHeaderName a location header name
+	 * @param hostValue host value
+	 * @param protocolsRegex a valid regex String, against which the protocol name will be
+	 * matched
+	 * @return a {@link GatewayFilterSpec} that can be used to apply additional filters
+	 */
+	public GatewayFilterSpec rewriteLocationResponseHeader(String stripVersionMode,
+			String locationHeaderName, String hostValue, String protocolsRegex) {
+		return filter(getBean(RewriteLocationResponseHeaderGatewayFilterFactory.class)
+				.apply(c -> c.setStripVersion(StripVersion.valueOf(stripVersionMode))
+						.setLocationHeaderName(locationHeaderName).setHostValue(hostValue)
+						.setProtocols(protocolsRegex)));
+	}
+
+	/**
 	 * A filter that sets the status on the response before it is returned to the client
 	 * by the Gateway.
 	 * @param status the status to set on the response
@@ -664,7 +710,26 @@ public class GatewayFilterSpec extends UriSpec {
 	 * @return a {@link GatewayFilterSpec} that can be used to apply additional filters
 	 */
 	public GatewayFilterSpec setRequestSize(Long size) {
+		return setRequestSize(DataSize.ofBytes(size));
+	}
+
+	/**
+	 * A filter that sets the maximum permissible size of a Request.
+	 * @param size the maximum size of a request
+	 * @return a {@link GatewayFilterSpec} that can be used to apply additional filters
+	 */
+	public GatewayFilterSpec setRequestSize(DataSize size) {
 		return filter(getBean(RequestSizeGatewayFilterFactory.class)
+				.apply(c -> c.setMaxSize(size)));
+	}
+
+	/**
+	 * A filter that sets the maximum permissible size of headers of Request.
+	 * @param size the maximum size of header of request
+	 * @return a {@link GatewayFilterSpec} that can be used to apply additional filters
+	 */
+	public GatewayFilterSpec setRequestHeaderSize(DataSize size) {
+		return filter(getBean(RequestHeaderSizeGatewayFilterFactory.class)
 				.apply(c -> c.setMaxSize(size)));
 	}
 

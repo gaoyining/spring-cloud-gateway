@@ -26,7 +26,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.cloud.gateway.event.WeightDefinedEvent;
-import org.springframework.cloud.gateway.filter.WeightCalculatorWebFilter;
 import org.springframework.cloud.gateway.support.WeightConfig;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
@@ -85,31 +84,40 @@ public class WeightRoutePredicateFactory
 
 	@Override
 	public Predicate<ServerWebExchange> apply(WeightConfig config) {
-		return exchange -> {
-			Map<String, String> weights = exchange.getAttributeOrDefault(WEIGHT_ATTR,
-					Collections.emptyMap());
+		return new GatewayPredicate() {
+			@Override
+			public boolean test(ServerWebExchange exchange) {
+				Map<String, String> weights = exchange.getAttributeOrDefault(WEIGHT_ATTR,
+						Collections.emptyMap());
 
-			String routeId = exchange.getAttribute(GATEWAY_PREDICATE_ROUTE_ATTR);
+				String routeId = exchange.getAttribute(GATEWAY_PREDICATE_ROUTE_ATTR);
 
-			// all calculations and comparison against random num happened in WeightCalculatorWebFilter
-			// 所有计算和对随机数的比较都发生在 WeightCalculatorWebFilter 中
-			String group = config.getGroup();
-			if (weights.containsKey(group)) {
+				// all calculations and comparison against random num happened in
+				// WeightCalculatorWebFilter
+				String group = config.getGroup();
+				if (weights.containsKey(group)) {
 
-				String chosenRoute = weights.get(group);
-				if (log.isTraceEnabled()) {
-					log.trace("in group weight: " + group + ", current route: " + routeId
-							+ ", chosen route: " + chosenRoute);
+					String chosenRoute = weights.get(group);
+					if (log.isTraceEnabled()) {
+						log.trace("in group weight: " + group + ", current route: "
+								+ routeId + ", chosen route: " + chosenRoute);
+					}
+
+					return routeId.equals(chosenRoute);
+				}
+				else if (log.isTraceEnabled()) {
+					log.trace("no weights found for group: " + group + ", current route: "
+							+ routeId);
 				}
 
-				return routeId.equals(chosenRoute);
-			}
-			else if (log.isTraceEnabled()) {
-				log.trace("no weights found for group: " + group + ", current route: "
-						+ routeId);
+				return false;
 			}
 
-			return false;
+			@Override
+			public String toString() {
+				return String.format("Weight: %s %s", config.getGroup(),
+						config.getWeight());
+			}
 		};
 	}
 
