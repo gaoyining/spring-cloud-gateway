@@ -89,11 +89,15 @@ public class RouteDefinitionRouteLocator
 			List<RoutePredicateFactory> predicates,
 			List<GatewayFilterFactory> gatewayFilterFactories,
 			GatewayProperties gatewayProperties, ConversionService conversionService) {
+		// 设置 RouteDefinitionLocator
 		this.routeDefinitionLocator = routeDefinitionLocator;
 		this.conversionService = conversionService;
+		// 初始化 RoutePredicateFactory
 		initFactories(predicates);
+		// 初始化 RoutePredicateFactory
 		gatewayFilterFactories.forEach(
 				factory -> this.gatewayFilterFactories.put(factory.name(), factory));
+		// 设置 GatewayProperties
 		this.gatewayProperties = gatewayProperties;
 	}
 
@@ -110,11 +114,13 @@ public class RouteDefinitionRouteLocator
 	private void initFactories(List<RoutePredicateFactory> predicates) {
 		predicates.forEach(factory -> {
 			String key = factory.name();
+			// 如果有重复的，打印日志
 			if (this.predicates.containsKey(key)) {
 				this.logger.warn("A RoutePredicateFactory named " + key
 						+ " already exists, class: " + this.predicates.get(key)
 						+ ". It will be overwritten.");
 			}
+			// 保存谓词工厂
 			this.predicates.put(key, factory);
 			if (logger.isInfoEnabled()) {
 				logger.info("Loaded RoutePredicateFactory [" + key + "]");
@@ -124,6 +130,7 @@ public class RouteDefinitionRouteLocator
 
 	@Override
 	public Flux<Route> getRoutes() {
+		//
 		return this.routeDefinitionLocator.getRouteDefinitions().map(this::convertToRoute)
 				// TODO: error handling
 				.map(route -> {
@@ -140,6 +147,7 @@ public class RouteDefinitionRouteLocator
 	}
 
 	private Route convertToRoute(RouteDefinition routeDefinition) {
+		// 转换成异步的谓词对象
 		AsyncPredicate<ServerWebExchange> predicate = combinePredicates(routeDefinition);
 		List<GatewayFilter> gatewayFilters = getFilters(routeDefinition);
 
@@ -217,6 +225,7 @@ public class RouteDefinitionRouteLocator
 	private AsyncPredicate<ServerWebExchange> combinePredicates(
 			RouteDefinition routeDefinition) {
 		List<PredicateDefinition> predicates = routeDefinition.getPredicates();
+		// 将routeDefinition转换成AsyncPredicate
 		AsyncPredicate<ServerWebExchange> predicate = lookup(routeDefinition,
 				predicates.get(0));
 
@@ -235,6 +244,7 @@ public class RouteDefinitionRouteLocator
 			PredicateDefinition predicate) {
 		RoutePredicateFactory<Object> factory = this.predicates.get(predicate.getName());
 		if (factory == null) {
+			// 没设置路由谓词工厂
 			throw new IllegalArgumentException(
 					"Unable to find RoutePredicateFactory with name "
 							+ predicate.getName());

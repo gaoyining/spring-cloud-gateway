@@ -72,6 +72,7 @@ import org.springframework.web.server.ServerWebExchange;
 
 /**
  * Applies specific filters to routes.
+ * 将特定过滤器应用于路径。
  */
 public class GatewayFilterSpec extends UriSpec {
 
@@ -170,6 +171,7 @@ public class GatewayFilterSpec extends UriSpec {
 
 	/**
 	 * Adds a header to the response returned to the Gateway from the route.
+	 * 为从路由返回到网关的响应添加标头。
 	 * @param headerName the header name
 	 * @param headerValue the header value
 	 * @return a {@link GatewayFilterSpec} that can be used to apply additional filters

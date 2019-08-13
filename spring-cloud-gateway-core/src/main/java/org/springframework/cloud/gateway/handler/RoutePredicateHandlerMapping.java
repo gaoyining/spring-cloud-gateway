@@ -78,14 +78,18 @@ public class RoutePredicateHandlerMapping extends AbstractHandlerMapping {
 	@Override
 	protected Mono<?> getHandlerInternal(ServerWebExchange exchange) {
 		// don't handle requests on management port if set and different than server port
+		// 如果设置且不同于服务器端口，则不处理管理端口上的请求
 		if (this.managementPortType == DIFFERENT && this.managementPort != null
 				&& exchange.getRequest().getURI().getPort() == this.managementPort) {
 			return Mono.empty();
 		}
+		// 网关处理程序映射器属性名称。
+		// 设置 GATEWAY_PREDICATE_ROUTE_ATTR 为匹配的路由
 		exchange.getAttributes().put(GATEWAY_HANDLER_MAPPER_ATTR, getSimpleName());
 
 		return lookupRoute(exchange)
 				// .log("route-predicate-handler-mapping", Level.FINER) //name this
+				// 设置 GATEWAY_HANDLER_MAPPER_ATTR 为 RoutePredicateHandlerMapping
 				.flatMap((Function<Route, Mono<?>>) r -> {
 					exchange.getAttributes().remove(GATEWAY_PREDICATE_ROUTE_ATTR);
 					if (logger.isDebugEnabled()) {
@@ -126,15 +130,15 @@ public class RoutePredicateHandlerMapping extends AbstractHandlerMapping {
 
 	protected Mono<Route> lookupRoute(ServerWebExchange exchange) {
 		return this.routeLocator.getRoutes()
-				// individually filter routes so that filterWhen error delaying is not a
-				// problem
+				// individually filter routes so that filterWhen error delaying is not a problem
+				// 单独过滤路由，以便过滤时错误延迟不是问题
 				.concatMap(route -> Mono.just(route).filterWhen(r -> {
 					// add the current route we are testing
 					exchange.getAttributes().put(GATEWAY_PREDICATE_ROUTE_ATTR, r.getId());
 					return r.getPredicate().apply(exchange);
 				})
-						// instead of immediately stopping main flux due to error, log and
-						// swallow it
+						// instead of immediately stopping main flux due to error, log and swallow it
+						// 而不是由于错误立即停止主要通量，记录并吞下它
 						.doOnError(e -> logger.error(
 								"Error applying predicate for route: " + route.getId(),
 								e))
@@ -160,6 +164,7 @@ public class RoutePredicateHandlerMapping extends AbstractHandlerMapping {
 
 	/**
 	 * Validate the given handler against the current request.
+	 * 根据当前请求验证给定的处理程序。
 	 * <p>
 	 * The default implementation is empty. Can be overridden in subclasses, for example
 	 * to enforce specific preconditions expressed in URL mappings.

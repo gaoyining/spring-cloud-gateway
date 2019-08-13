@@ -33,6 +33,7 @@ import org.springframework.cloud.gateway.rsocket.support.Metadata;
 
 /**
  * Creates routes from RegisteredEvents.
+ * 从RegisteredEvents创建路由。
  */
 public class RegistryRoutes implements Routes, Consumer<Registry.RegisteredEvent> {
 

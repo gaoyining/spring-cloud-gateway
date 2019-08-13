@@ -28,9 +28,8 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.G
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.addOriginalRequestUrl;
 
 /**
- * This filter removes the first part of the path, known as the prefix, from the request
- * before sending it downstream.
- *
+ * This filter removes the first part of the path, known as the prefix, from the request before sending it downstream.
+ * 此过滤器在向下游发送之前从请求中删除路径的第一部分（称为前缀）。 *
  * @author Ryan Baxter
  */
 public class StripPrefixGatewayFilterFactory

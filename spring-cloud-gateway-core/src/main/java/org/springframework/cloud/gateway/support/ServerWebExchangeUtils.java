@@ -57,6 +57,7 @@ public final class ServerWebExchangeUtils {
 
 	/**
 	 * URI template variables attribute name.
+	 * URI模板变量属性名称。
 	 */
 	public static final String URI_TEMPLATE_VARIABLES_ATTRIBUTE = qualify(
 			"uriTemplateVariables");
@@ -96,6 +97,7 @@ public final class ServerWebExchangeUtils {
 
 	/**
 	 * Gateway handler mapper attribute name.
+	 * 网关处理程序映射器属性名称。
 	 */
 	public static final String GATEWAY_HANDLER_MAPPER_ATTR = qualify(
 			"gatewayHandlerMapper");
@@ -108,6 +110,7 @@ public final class ServerWebExchangeUtils {
 
 	/**
 	 * Gateway predicate route attribute name.
+	 * 网关谓词路由属性名称.
 	 */
 	public static final String GATEWAY_PREDICATE_ROUTE_ATTR = qualify(
 			"gatewayPredicateRouteAttr");

@@ -56,6 +56,7 @@ public class QueryRoutePredicateFactory
 		return exchange -> {
 			if (!StringUtils.hasText(config.regexp)) {
 				// check existence of header
+				// 检查标题的存在
 				return exchange.getRequest().getQueryParams().containsKey(config.param);
 			}
 

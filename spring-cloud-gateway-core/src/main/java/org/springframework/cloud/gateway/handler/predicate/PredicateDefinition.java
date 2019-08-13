@@ -34,9 +34,15 @@ import static org.springframework.util.StringUtils.tokenizeToStringArray;
 @Validated
 public class PredicateDefinition {
 
+	/**
+	 * 谓语定义名字
+	 */
 	@NotNull
 	private String name;
 
+	/**
+	 * 参数数组
+	 */
 	private Map<String, String> args = new LinkedHashMap<>();
 
 	public PredicateDefinition() {

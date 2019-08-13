@@ -21,9 +21,8 @@ import java.util.function.Predicate;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
- * Creates a predicate which indicates if the request is intended for a Cloud Foundry
- * Route Service.
- *
+ * Creates a predicate which indicates if the request is intended for a Cloud Foundry Route Service.
+ * 创建一个谓词，指示该请求是否适用于Cloud Foundry Route Service
  * @author Andrew Fitzgerald
  * @see <a href="https://docs.cloudfoundry.org/services/route-services.html">Cloud Foundry
  * Route Service documentation</a>

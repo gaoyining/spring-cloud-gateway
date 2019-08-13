@@ -72,6 +72,7 @@ public interface RoutePredicateFactory<C> extends ShortcutConfigurable, Configur
 	}
 
 	default String name() {
+		// 将 GatewayFilterFactory.class.getSimpleName() 去掉
 		return NameUtils.normalizeRoutePredicateName(getClass());
 	}
 

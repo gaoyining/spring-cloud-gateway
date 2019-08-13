@@ -23,6 +23,9 @@ import reactor.core.publisher.Flux;
  */
 public class CompositeRouteDefinitionLocator implements RouteDefinitionLocator {
 
+	/**
+	 * RouteDefinitionLocator 数组
+	 */
 	private final Flux<RouteDefinitionLocator> delegates;
 
 	public CompositeRouteDefinitionLocator(Flux<RouteDefinitionLocator> delegates) {

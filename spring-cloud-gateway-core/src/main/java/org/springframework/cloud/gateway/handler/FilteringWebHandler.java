@@ -38,9 +38,9 @@ import org.springframework.web.server.WebHandler;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR;
 
 /**
- * WebHandler that delegates to a chain of {@link GlobalFilter} instances and
- * {@link GatewayFilterFactory} instances then to the target {@link WebHandler}.
- *
+ * WebHandler that delegates to a chain of {@link GlobalFilter} instances and {@link GatewayFilterFactory} instances then to the target {@link WebHandler}.
+ * WebHandler委托一系列{@link GlobalFilter}实例和
+ * {@link GatewayFilterFactory}实例然后委托给目标{@link WebHandler}。 *
  * @author Rossen Stoyanchev
  * @author Spencer Gibb
  * @since 0.1
@@ -55,10 +55,18 @@ public class FilteringWebHandler implements WebHandler {
 		this.globalFilters = loadFilters(globalFilters);
 	}
 
+	/**
+	 * 加载所有的过滤器
+	 * @param filters
+	 * @return
+	 */
 	private static List<GatewayFilter> loadFilters(List<GlobalFilter> filters) {
 		return filters.stream().map(filter -> {
+			// 适配器模式，用以适配GlobalFilter
 			GatewayFilterAdapter gatewayFilter = new GatewayFilterAdapter(filter);
+			// 判断是否是Ordered类型
 			if (filter instanceof Ordered) {
+				// 是ordered类型，返回OrderedGatewayFilter
 				int order = ((Ordered) filter).getOrder();
 				return new OrderedGatewayFilter(gatewayFilter, order);
 			}
@@ -73,9 +81,12 @@ public class FilteringWebHandler implements WebHandler {
 
 	@Override
 	public Mono<Void> handle(ServerWebExchange exchange) {
+		// 获得route
 		Route route = exchange.getRequiredAttribute(GATEWAY_ROUTE_ATTR);
+		// 获得过滤器
 		List<GatewayFilter> gatewayFilters = route.getFilters();
 
+		// 加入全局过滤器
 		List<GatewayFilter> combined = new ArrayList<>(this.globalFilters);
 		combined.addAll(gatewayFilters);
 		// TODO: needed or cached?

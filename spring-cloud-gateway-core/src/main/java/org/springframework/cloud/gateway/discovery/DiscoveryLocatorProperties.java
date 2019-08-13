@@ -28,29 +28,30 @@ import org.springframework.core.style.ToStringCreator;
 public class DiscoveryLocatorProperties {
 
 	/** Flag that enables DiscoveryClient gateway integration. */
+	/** 启用DiscoveryClient网关集成的标志。 */
 	private boolean enabled = false;
 
 	/**
-	 * The prefix for the routeId, defaults to discoveryClient.getClass().getSimpleName()
-	 * + "_". Service Id will be appended to create the routeId.
+	 * The prefix for the routeId, defaults to discoveryClient.getClass().getSimpleName() + "_". Service Id will be appended to create the routeId.
+	 * routeId的前缀, defaults to discoveryClient.getClass().getSimpleName() + "_". Service Id will be appended to create the routeId.
 	 */
 	private String routeIdPrefix;
 
 	/**
-	 * SpEL expression that will evaluate whether to include a service in gateway
-	 * integration or not, defaults to: true.
+	 * SpEL expression that will evaluate whether to include a service in gateway integration or not, defaults to: true.
+	 * SpEL表达式将评估是否在网关集成中包含服务，默认为：true。
 	 */
 	private String includeExpression = "true";
 
 	/**
 	 * SpEL expression that create the uri for each route, defaults to: 'lb://'+serviceId.
+	 * 为每个路由创建uri的SpEL表达式，默认为: 'lb://'+serviceId.
 	 */
 	private String urlExpression = "'lb://'+serviceId";
 
 	/**
-	 * Option to lower case serviceId in predicates and filters, defaults to false. Useful
-	 * with eureka when it automatically uppercases serviceId. so MYSERIVCE, would match
-	 * /myservice/**
+	 * Option to lower case serviceId in predicates and filters, defaults to false. Useful with eureka when it automatically uppercases serviceId. so MYSERIVCE, would match /myservice/**
+	 *在谓词和过滤器中小写serviceId的选项，默认为false。当eureka自动高举serviceId时，它很有用。所以MYSERIVCE，会匹配/ myservice / **
 	 */
 	private boolean lowerCaseServiceId = false;
 

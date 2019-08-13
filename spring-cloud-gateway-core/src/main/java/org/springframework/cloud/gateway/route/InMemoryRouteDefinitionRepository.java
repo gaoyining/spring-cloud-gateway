@@ -31,6 +31,10 @@ import static java.util.Collections.synchronizedMap;
  */
 public class InMemoryRouteDefinitionRepository implements RouteDefinitionRepository {
 
+	/**
+	 * 路由配置映射
+	 * key ：路由编号 {@link RouteDefinition#id}
+	 */
 	private final Map<String, RouteDefinition> routes = synchronizedMap(
 			new LinkedHashMap<String, RouteDefinition>());
 

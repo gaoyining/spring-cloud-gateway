@@ -62,6 +62,9 @@ public class GatewayControllerEndpoint implements ApplicationEventPublisherAware
 
 	private List<GatewayFilterFactory> GatewayFilters;
 
+	/**
+	 * 存储器 RouteDefinitionLocator 对象
+	 */
 	private RouteDefinitionWriter routeDefinitionWriter;
 
 	private RouteLocator routeLocator;

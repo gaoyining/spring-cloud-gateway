@@ -24,6 +24,10 @@ import reactor.core.publisher.Flux;
 // TODO: rename to Routes?
 public interface RouteLocator {
 
+	/**
+	 * 获得路由数组的方法
+	 * @return
+	 */
 	Flux<Route> getRoutes();
 
 }

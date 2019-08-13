@@ -42,35 +42,57 @@ public class RouteDefinition {
 	@NotEmpty
 	private String id = UUID.randomUUID().toString();
 
+	/**
+	 * 谓语定义数组
+	 */
 	@NotEmpty
 	@Valid
 	private List<PredicateDefinition> predicates = new ArrayList<>();
 
+	/**
+	 * 过滤器定义数组
+	 */
 	@Valid
 	private List<FilterDefinition> filters = new ArrayList<>();
 
+	/**
+	 * 路由向的 URI
+	 */
 	@NotNull
 	private URI uri;
 
+	/**
+	 * 顺序
+	 */
 	private int order = 0;
 
 	public RouteDefinition() {
 	}
 
+	/**
+	 * 根据 text 创建 RouteDefinition
+	 *
+	 * @param text 格式 ${id}=${uri},${predicates[0]},${predicates[1]}...${predicates[n]}
+	 *             例如 route001=http://127.0.0.1,Host=**.addrequestparameter.org,Path=/get
+	 */
 	public RouteDefinition(String text) {
+		// 获得第一个 "="
 		int eqIdx = text.indexOf('=');
 		if (eqIdx <= 0) {
 			throw new ValidationException("Unable to parse RouteDefinition text '" + text
 					+ "'" + ", must be of the form name=value");
 		}
 
+		// 设置id
 		setId(text.substring(0, eqIdx));
 
 		String[] args = tokenizeToStringArray(text.substring(eqIdx + 1), ",");
 
+		// 设置uri
 		setUri(URI.create(args[0]));
 
 		for (int i = 1; i < args.length; i++) {
+			// 设置谓词数组
 			this.predicates.add(new PredicateDefinition(args[i]));
 		}
 	}

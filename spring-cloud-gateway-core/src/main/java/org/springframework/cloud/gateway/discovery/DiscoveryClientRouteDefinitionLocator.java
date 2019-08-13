@@ -60,6 +60,8 @@ public class DiscoveryClientRouteDefinitionLocator implements RouteDefinitionLoc
 			DiscoveryLocatorProperties properties) {
 		this.discoveryClient = discoveryClient;
 		this.properties = properties;
+
+		// 路由配置编号前缀，以 DiscoveryClient 类名 + _
 		if (StringUtils.hasText(properties.getRouteIdPrefix())) {
 			this.routeIdPrefix = properties.getRouteIdPrefix();
 		}
@@ -74,8 +76,10 @@ public class DiscoveryClientRouteDefinitionLocator implements RouteDefinitionLoc
 	public Flux<RouteDefinition> getRouteDefinitions() {
 
 		SpelExpressionParser parser = new SpelExpressionParser();
+		// 获得是否在网关中获得服务
 		Expression includeExpr = parser
 				.parseExpression(properties.getIncludeExpression());
+		// 创建lb + serviceId
 		Expression urlExpr = parser.parseExpression(properties.getUrlExpression());
 
 		Predicate<ServiceInstance> includePredicate;
@@ -105,9 +109,11 @@ public class DiscoveryClientRouteDefinitionLocator implements RouteDefinitionLoc
 					String uri = urlExpr.getValue(evalCtxt, instance, String.class);
 					routeDefinition.setUri(URI.create(uri));
 
+					// 构建服务代理对象
 					final ServiceInstance instanceForEval = new DelegatingServiceInstance(
 							instance, properties);
 
+					// 设置谓词
 					for (PredicateDefinition original : this.properties.getPredicates()) {
 						PredicateDefinition predicate = new PredicateDefinition();
 						predicate.setName(original.getName());
@@ -120,6 +126,7 @@ public class DiscoveryClientRouteDefinitionLocator implements RouteDefinitionLoc
 						routeDefinition.getPredicates().add(predicate);
 					}
 
+					// 设置过滤器
 					for (FilterDefinition original : this.properties.getFilters()) {
 						FilterDefinition filter = new FilterDefinition();
 						filter.setName(original.getName());

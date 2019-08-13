@@ -63,12 +63,15 @@ public class HeaderRoutePredicateFactory
 				return false;
 			}
 			// values is now guaranteed to not be empty
+			// 现在保证值不为空
 			if (hasRegex) {
 				// check if a header value matches
+				// 检查标头值是否匹配
 				return values.stream().anyMatch(value -> value.matches(config.regexp));
 			}
 
 			// there is a value and since regexp is empty, we only check existence.
+			// 有一个值，因为正则表达式是空的，我们只检查存在。
 			return true;
 		};
 	}

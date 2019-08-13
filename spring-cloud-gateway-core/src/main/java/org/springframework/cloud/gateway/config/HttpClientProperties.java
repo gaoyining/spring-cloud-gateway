@@ -183,6 +183,7 @@ public class HttpClientProperties {
 
 			/**
 			 * Elastic pool type.
+			 * Elastic pool type.
 			 */
 			ELASTIC,
 

@@ -32,9 +32,9 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
- * Predicate that reads the body and applies a user provided predicate to run on the body.
- * The body is cached in memory so that possible subsequent calls to the predicate do not
- * need to deserialize again.
+ * Predicate that reads the body and applies a user provided predicate to run on the body. The body is cached in memory so that possible subsequent calls to the predicate do not need to deserialize again.
+ * 谓词读取正文并应用用户提供的谓词在身体上运行。
+ * 正文被缓存在内存中，以便后续对谓词的调用不需要再次反序列化。
  */
 public class ReadBodyPredicateFactory
 		extends AbstractRoutePredicateFactory<ReadBodyPredicateFactory.Config> {

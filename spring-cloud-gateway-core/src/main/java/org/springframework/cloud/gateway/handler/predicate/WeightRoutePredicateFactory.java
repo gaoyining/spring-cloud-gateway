@@ -26,6 +26,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.cloud.gateway.event.WeightDefinedEvent;
+import org.springframework.cloud.gateway.filter.WeightCalculatorWebFilter;
 import org.springframework.cloud.gateway.support.WeightConfig;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
@@ -90,8 +91,8 @@ public class WeightRoutePredicateFactory
 
 			String routeId = exchange.getAttribute(GATEWAY_PREDICATE_ROUTE_ATTR);
 
-			// all calculations and comparison against random num happened in
-			// WeightCalculatorWebFilter
+			// all calculations and comparison against random num happened in WeightCalculatorWebFilter
+			// 所有计算和对随机数的比较都发生在 WeightCalculatorWebFilter 中
 			String group = config.getGroup();
 			if (weights.containsKey(group)) {
 
